@@ -37,10 +37,8 @@ jobs:
             exit 1
           fi
 
-          # Validate that response is a JSON array (starts with '[')
-          IS_ARRAY=$(echo "$RESPONSE" | \
-            jq -e 'if type == "array" then true else false end' 2>&1)
-          if [ "$IS_ARRAY" != "true" ]; then
+          # Validate that response is a JSON array
+          if ! echo "$RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
             echo "Error: API did not return a valid array."
             echo "Response: $RESPONSE"
             exit 1

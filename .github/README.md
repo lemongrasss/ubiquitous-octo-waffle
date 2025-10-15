@@ -14,7 +14,7 @@ The workflow runs every hour and:
 4. **Creates a Pull Request** if review is needed:
    - Updates the `reviewed at` line with today's date
    - Creates a PR to the `main` branch
-   - Randomly assigns a member from the `matt-test-team` team
+   - Randomly assigns a member from the `matts-test-team` team
    - Includes a message explaining the review requirement
 
 ## Files
@@ -29,7 +29,7 @@ You can manually trigger the workflow from the Actions tab in GitHub using the "
 
 ## Team Configuration
 
-The workflow assigns PRs to random members of the `matt-test-team` team in the GitHub organization. Ensure this team exists and has appropriate members.
+The workflow assigns PRs to random members of the `matts-test-team` team in the lemongrasss organization. Ensure this team exists and has appropriate members.
 
 ## Document Format
 

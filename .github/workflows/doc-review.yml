@@ -29,8 +29,8 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get members from matt-test-team
-          MEMBERS=$(gh api /orgs/lemongrasss/teams/matt-test-team/members --jq '.[].login' | tr '\n' ',' | sed 's/,$//')
+          # Get members from matts-test-team
+          MEMBERS=$(gh api /orgs/lemongrasss/teams/matts-test-team/members --jq '.[].login' | tr '\n' ',' | sed 's/,$//')
           if [ -z "$MEMBERS" ]; then
             echo "Error: Could not retrieve team members"
             exit 1

@@ -30,11 +30,38 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Get members from matts-test-team
-          MEMBERS=$(gh api /orgs/lemongrasss/teams/matts-test-team/members --jq '.[].login' | tr '\n' ',' | sed 's/,$//')
-          if [ -z "$MEMBERS" ]; then
-            echo "Error: Could not retrieve team members"
+          # First check if the API call succeeds and returns an array
+          API_PATH="/orgs/lemongrasss/teams/matts-test-team/members"
+          if ! RESPONSE=$(gh api "$API_PATH" 2>&1); then
+            echo "Error: Failed to call GitHub API: $RESPONSE"
             exit 1
           fi
+
+          # Validate that response is a JSON array (starts with '[')
+          IS_ARRAY=$(echo "$RESPONSE" | \
+            jq -e 'if type == "array" then true else false end' 2>&1)
+          if [ "$IS_ARRAY" != "true" ]; then
+            echo "Error: API did not return a valid array."
+            echo "Response: $RESPONSE"
+            exit 1
+          fi
+
+          # Extract login names
+          MEMBERS=$(echo "$RESPONSE" | \
+            jq -r '.[].login' | tr '\n' ',' | sed 's/,$//')
+
+          if [ -z "$MEMBERS" ]; then
+            echo "Error: Could not retrieve team members (empty list)"
+            exit 1
+          fi
+
+          # Validate MEMBERS contains only valid GitHub usernames
+          PATTERN='^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$'
+          if ! echo "$MEMBERS" | grep -qE "$PATTERN"; then
+            echo "Error: Invalid team member format: $MEMBERS"
+            exit 1
+          fi
+
           echo "members=$MEMBERS" >> $GITHUB_OUTPUT
           echo "Retrieved team members: $MEMBERS"
 

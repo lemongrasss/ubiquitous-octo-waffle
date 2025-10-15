@@ -18,9 +18,14 @@ function formatDate(date) {
 
 // Parse "reviewed at yyyy-mm-dd" from file content
 function getReviewDate(content) {
-  const match = content.match(/^reviewed at (\d{4}-\d{2}-\d{2})/im);
+  const match = content.match(/^reviewed at (\d{4}-\d{2}-\d{2})/m);
   if (match) {
-    return new Date(match[1]);
+    const date = new Date(match[1]);
+    // Validate the date is valid
+    if (isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
   }
   return null;
 }
@@ -83,12 +88,12 @@ function updateReviewDate(content, newDate) {
   const dateString = formatDate(newDate);
   const reviewLine = `reviewed at ${dateString}`;
   
-  // Check if file already has a review line
-  const hasReviewLine = /^reviewed at \d{4}-\d{2}-\d{2}/im.test(content);
+  // Check if file already has a review line (case-sensitive)
+  const hasReviewLine = /^reviewed at \d{4}-\d{2}-\d{2}/m.test(content);
   
   if (hasReviewLine) {
-    // Replace existing review line
-    return content.replace(/^reviewed at \d{4}-\d{2}-\d{2}/im, reviewLine);
+    // Replace existing review line (case-sensitive)
+    return content.replace(/^reviewed at \d{4}-\d{2}-\d{2}/m, reviewLine);
   } else {
     // Add review line at the beginning
     return reviewLine + '\n\n' + content;

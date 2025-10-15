@@ -1,0 +1,88 @@
+name: Automated Document Review
+
+on:
+  schedule:
+    # Run every hour
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allow manual triggering for testing
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  review-document:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get GitHub team members
+        id: get-team
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get members from matt-test-team
+          MEMBERS=$(gh api /orgs/lemongrasss/teams/matt-test-team/members --jq '.[].login' | tr '\n' ',' | sed 's/,$//')
+          if [ -z "$MEMBERS" ]; then
+            echo "Error: Could not retrieve team members"
+            exit 1
+          fi
+          echo "members=$MEMBERS" >> $GITHUB_OUTPUT
+          echo "Retrieved team members: $MEMBERS"
+
+      - name: Run document review script
+        id: review
+        env:
+          TEAM_MEMBERS: ${{ steps.get-team.outputs.members }}
+        run: |
+          node .github/scripts/review-docs.js
+
+      - name: Create Pull Request
+        if: steps.review.outputs.needs_review == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FILE_PATH: ${{ steps.review.outputs.file_path }}
+          ASSIGNEE: ${{ steps.review.outputs.assignee }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create a new branch
+          BRANCH_NAME="doc-review/$(basename "$FILE_PATH" .md)-$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH_NAME"
+
+          # Commit the changes
+          git add "$FILE_PATH"
+          git commit -m "docs: update review date for $(basename "$FILE_PATH")"
+
+          # Push the branch
+          git push origin "$BRANCH_NAME"
+
+          # Create PR with assignee
+          PR_BODY="Hi @$ASSIGNEE,
+
+          This document needs to be reviewed. The review tracking date has been automatically updated.
+
+          **File:** \`$FILE_PATH\`
+          **Action required:** Please review the document for accuracy, completeness, and relevance.
+
+          If the document is up-to-date, simply approve and merge this PR.
+          If changes are needed, please make them and then merge.
+
+          Thank you!"
+
+          gh pr create \
+            --title "docs: review $(basename "$FILE_PATH")" \
+            --body "$PR_BODY" \
+            --base main \
+            --head "$BRANCH_NAME" \
+            --assignee "$ASSIGNEE"

@@ -9,7 +9,6 @@ on:
 permissions:
   contents: write
   pull-requests: write
-  members: read
 
 jobs:
   review-document:
@@ -25,44 +24,42 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Get GitHub team members
+      - name: Get team members from YAML file
         id: get-team
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get members from matts-test-team
-          # First check if the API call succeeds and returns an array
-          API_PATH="/orgs/lemongrasss/teams/matts-test-team/members"
-          if ! RESPONSE=$(gh api "$API_PATH" 2>&1); then
-            echo "Error: Failed to call GitHub API: $RESPONSE"
+          # Read members from rotation_members.yml
+          YAML_FILE=".github/scripts/rotation_members.yml"
+          
+          if [ ! -f "$YAML_FILE" ]; then
+            echo "Error: $YAML_FILE not found"
             exit 1
           fi
-
-          # Validate that response is a JSON array
-          if ! echo "$RESPONSE" | jq -e 'type == "array"' > /dev/null 2>&1; then
-            echo "Error: API did not return a valid array."
-            echo "Response: $RESPONSE"
-            exit 1
-          fi
-
-          # Extract login names
-          MEMBERS=$(echo "$RESPONSE" | \
-            jq -r '.[].login' | tr '\n' ',' | sed 's/,$//')
-
+          
+          # Extract members using grep and sed
+          # The YAML format is:
+          # members:
+          #  - mattamorphic
+          #  - lisakr
+          MEMBERS=$(grep -A 100 "^members:" "$YAML_FILE" | \
+            grep "^ - " | \
+            sed 's/^ - //' | \
+            tr '\n' ',' | \
+            sed 's/,$//')
+          
           if [ -z "$MEMBERS" ]; then
-            echo "Error: Could not retrieve team members (empty list)"
+            echo "Error: Could not retrieve team members from $YAML_FILE (empty list)"
             exit 1
           fi
-
+          
           # Validate MEMBERS contains only valid GitHub usernames
           PATTERN='^[a-zA-Z0-9_-]+(,[a-zA-Z0-9_-]+)*$'
           if ! echo "$MEMBERS" | grep -qE "$PATTERN"; then
             echo "Error: Invalid team member format: $MEMBERS"
             exit 1
           fi
-
+          
           echo "members=$MEMBERS" >> $GITHUB_OUTPUT
-          echo "Retrieved team members: $MEMBERS"
+          echo "Retrieved team members from YAML file: $MEMBERS"
 
       - name: Run document review script
         id: review

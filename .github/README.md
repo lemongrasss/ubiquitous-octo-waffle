@@ -14,13 +14,14 @@ The workflow runs every hour and:
 4. **Creates a Pull Request** if review is needed:
    - Updates the `reviewed at` line with today's date
    - Creates a PR to the `main` branch
-   - Randomly assigns a member from the `matts-test-team` team
+   - Randomly assigns a member from the team defined in `scripts/rotation_members.yml`
    - Includes a message explaining the review requirement
 
 ## Files
 
 - `workflows/doc-review.yml` - Main GitHub Actions workflow
 - `scripts/review-docs.js` - Node.js script that handles the review logic
+- `scripts/rotation_members.yml` - YAML file containing the list of team members for assignment
 - `state/doc-review-state.json` - Tracks which document was last checked (for round-robin)
 
 ## Manual Triggering
@@ -29,7 +30,13 @@ You can manually trigger the workflow from the Actions tab in GitHub using the "
 
 ## Team Configuration
 
-The workflow assigns PRs to random members of the `matts-test-team` team in the lemongrasss organization. Ensure this team exists and has appropriate members.
+The workflow assigns PRs to random members defined in `scripts/rotation_members.yml`. To add or remove members, edit this file:
+
+```yaml
+members:
+ - username1
+ - username2
+```
 
 ## Document Format
 

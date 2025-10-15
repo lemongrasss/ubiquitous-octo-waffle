@@ -20,9 +20,17 @@ function formatDate(date) {
 function getReviewDate(content) {
   const match = content.match(/^reviewed at (\d{4}-\d{2}-\d{2})/m);
   if (match) {
-    const date = new Date(match[1]);
-    // Validate the date is valid
+    const dateString = match[1];
+    const date = new Date(dateString);
+    // Validate the date is valid and matches the original format
     if (isNaN(date.getTime())) {
+      return null;
+    }
+    // Verify the date string matches what we'd format back
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (date.getFullYear() !== year || 
+        date.getMonth() + 1 !== month || 
+        date.getDate() !== day) {
       return null;
     }
     return date;

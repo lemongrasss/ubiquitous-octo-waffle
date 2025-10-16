@@ -135,55 +135,74 @@ function main() {
     const state = loadState();
     console.log(`Last processed index: ${state.lastIndex}`);
 
-    // Select next file
-    const selection = selectNextFile(files, state.lastIndex);
-    if (!selection) {
-      console.log('No files to process');
-      setOutput('needs_review', 'false');
-      return;
-    }
+    // Keep track of starting point to avoid infinite loop
+    const startIndex = state.lastIndex;
+    let checkedCount = 0;
 
-    const { file, index } = selection;
-    const filePath = path.join(DOCS_DIR, file);
-    console.log(`Checking file: ${file} (index ${index})`);
-
-    // Read file content
-    const content = fs.readFileSync(filePath, 'utf8');
-
-    // Check review date
-    const reviewDate = getReviewDate(content);
-    console.log(`Review date: ${reviewDate ? formatDate(reviewDate) : 'not found'}`);
-
-    if (needsReview(reviewDate)) {
-      console.log('Document needs review');
-
-      // Update review date
-      const today = new Date();
-      const updatedContent = updateReviewDate(content, today);
-      fs.writeFileSync(filePath, updatedContent);
-      console.log(`Updated review date to ${formatDate(today)}`);
-
-      // Select random assignee
-      const teamMembers = process.env.TEAM_MEMBERS || '';
-      if (!teamMembers) {
-        throw new Error('TEAM_MEMBERS environment variable not set');
+    // Loop through documents until we find one that needs review or check all documents
+    while (checkedCount < files.length) {
+      // Select next file
+      const selection = selectNextFile(files, state.lastIndex);
+      if (!selection) {
+        console.log('No files to process');
+        setOutput('needs_review', 'false');
+        return;
       }
-      const assignee = selectRandomAssignee(teamMembers);
-      console.log(`Selected assignee: ${assignee}`);
 
-      // Set outputs for GitHub Actions
-      setOutput('needs_review', 'true');
-      setOutput('file_path', path.relative(path.join(__dirname, '../..'), filePath));
-      setOutput('assignee', assignee);
-    } else {
-      console.log('Document is up to date, no review needed');
-      setOutput('needs_review', 'false');
+      const { file, index } = selection;
+      const filePath = path.join(DOCS_DIR, file);
+      console.log(`Checking file: ${file} (index ${index})`);
+
+      // Read file content
+      const content = fs.readFileSync(filePath, 'utf8');
+
+      // Check review date
+      const reviewDate = getReviewDate(content);
+      console.log(`Review date: ${reviewDate ? formatDate(reviewDate) : 'not found'}`);
+
+      if (needsReview(reviewDate)) {
+        console.log('Document needs review');
+
+        // Update review date
+        const today = new Date();
+        const updatedContent = updateReviewDate(content, today);
+        fs.writeFileSync(filePath, updatedContent);
+        console.log(`Updated review date to ${formatDate(today)}`);
+
+        // Select random assignee
+        const teamMembers = process.env.TEAM_MEMBERS || '';
+        if (!teamMembers) {
+          throw new Error('TEAM_MEMBERS environment variable not set');
+        }
+        const assignee = selectRandomAssignee(teamMembers);
+        console.log(`Selected assignee: ${assignee}`);
+
+        // Set outputs for GitHub Actions
+        setOutput('needs_review', 'true');
+        setOutput('file_path', path.relative(path.join(__dirname, '../..'), filePath));
+        setOutput('assignee', assignee);
+
+        // Update state for next run
+        state.lastIndex = index;
+        saveState(state);
+        console.log(`Updated state: lastIndex=${index}`);
+        
+        return; // Found a document that needs review, exit
+      } else {
+        console.log('Document is up to date, moving to next document');
+        // Update state to move to next document
+        state.lastIndex = index;
+        checkedCount++;
+      }
     }
 
-    // Update state for next run
-    state.lastIndex = index;
+    // If we've checked all documents and none need review
+    console.log('All documents are up to date, no review needed');
+    setOutput('needs_review', 'false');
+    
+    // Save final state
     saveState(state);
-    console.log(`Updated state: lastIndex=${index}`);
+    console.log(`Updated state: lastIndex=${state.lastIndex}`);
 
   } catch (error) {
     console.error('Error:', error);

@@ -65,6 +65,7 @@ jobs:
         id: review
         env:
           TEAM_MEMBERS: ${{ steps.get-team.outputs.members }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           node .github/scripts/review-docs.js
 

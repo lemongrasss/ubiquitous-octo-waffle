@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Configuration
 const DOCS_DIR = path.join(__dirname, '../../docs');
@@ -118,6 +119,34 @@ function selectRandomAssignee(teamMembers) {
   return members[randomIndex].trim();
 }
 
+// Check if there's an open PR that includes this document
+function hasExistingPR(filePath) {
+  try {
+    // Get all open PRs
+    const prsJson = execSync('gh pr list --state open --json number,files', {
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe']
+    });
+    
+    const prs = JSON.parse(prsJson);
+    
+    // Check if any PR includes this file
+    for (const pr of prs) {
+      if (pr.files && pr.files.some(file => file.path === filePath)) {
+        console.log(`Found existing PR #${pr.number} that includes ${filePath}`);
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('Error checking for existing PRs:', error.message);
+    // If we can't check for PRs, we should not block the process
+    // Return false to allow PR creation
+    return false;
+  }
+}
+
 // Main function
 function main() {
   try {
@@ -163,6 +192,16 @@ function main() {
       if (needsReview(reviewDate)) {
         console.log('Document needs review');
 
+        // Check if there's already an open PR for this document
+        const relativeFilePath = path.relative(path.join(__dirname, '../..'), filePath);
+        if (hasExistingPR(relativeFilePath)) {
+          console.log('Skipping: Open PR already exists for this document');
+          // Update state to move to next document
+          state.lastIndex = index;
+          checkedCount++;
+          continue; // Skip to next document
+        }
+
         // Update review date
         const today = new Date();
         const updatedContent = updateReviewDate(content, today);
@@ -179,7 +218,7 @@ function main() {
 
         // Set outputs for GitHub Actions
         setOutput('needs_review', 'true');
-        setOutput('file_path', path.relative(path.join(__dirname, '../..'), filePath));
+        setOutput('file_path', relativeFilePath);
         setOutput('assignee', assignee);
 
         // Update state for next run

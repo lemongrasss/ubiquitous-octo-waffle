@@ -53,6 +53,7 @@ test('parseFrontMatter parses valid front matter', () => {
   assert.strictEqual(result.frontMatter.reviewed_at, '2025-10-15');
   assert.strictEqual(result.frontMatter.author, 'test');
   assert.strictEqual(result.body, '# Title\n\nContent');
+  assert.deepStrictEqual(result.fieldOrder, ['reviewed_at', 'author']);
 });
 
 test('parseFrontMatter handles content without front matter', () => {
@@ -62,6 +63,7 @@ test('parseFrontMatter handles content without front matter', () => {
   assert.strictEqual(result.hasFrontMatter, false);
   assert.deepStrictEqual(result.frontMatter, {});
   assert.strictEqual(result.body, content);
+  assert.deepStrictEqual(result.fieldOrder, []);
 });
 
 test('parseFrontMatter handles empty front matter as no front matter', () => {
@@ -172,6 +174,20 @@ test('updateReviewDate preserves other front matter fields', () => {
   assert.ok(result.includes('author: test'));
   assert.ok(result.includes('tags: docs'));
   assert.ok(result.includes('reviewed_at: 2025-02-15'));
+});
+
+test('updateReviewDate preserves field order', () => {
+  const content = '---\nauthor: test\nreviewed_at: 2025-01-01\ntags: docs\n---\n\n# Title';
+  const newDate = new Date('2025-02-15');
+  const result = updateReviewDate(content, newDate);
+  
+  // Check that order is preserved: author, reviewed_at, tags
+  const authorIndex = result.indexOf('author:');
+  const reviewedAtIndex = result.indexOf('reviewed_at:');
+  const tagsIndex = result.indexOf('tags:');
+  
+  assert.ok(authorIndex < reviewedAtIndex, 'author should come before reviewed_at');
+  assert.ok(reviewedAtIndex < tagsIndex, 'reviewed_at should come before tags');
 });
 
 // selectNextFile tests

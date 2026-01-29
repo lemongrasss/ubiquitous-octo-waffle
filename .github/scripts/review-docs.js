@@ -26,21 +26,23 @@ function parseFrontMatter(content) {
     const frontMatterText = match[1];
     const body = content.slice(match[0].length).replace(/^\n+/, '');
     
-    // Parse YAML-like key-value pairs
+    // Parse YAML-like key-value pairs, preserving order
     const frontMatter = {};
+    const fieldOrder = [];
     frontMatterText.split('\n').forEach(line => {
       const colonIndex = line.indexOf(':');
       if (colonIndex > 0) {
         const key = line.slice(0, colonIndex).trim();
         const value = line.slice(colonIndex + 1).trim();
         frontMatter[key] = value;
+        fieldOrder.push(key);
       }
     });
     
-    return { frontMatter, body, hasFrontMatter: true };
+    return { frontMatter, body, hasFrontMatter: true, fieldOrder };
   }
   
-  return { frontMatter: {}, body: content, hasFrontMatter: false };
+  return { frontMatter: {}, body: content, hasFrontMatter: false, fieldOrder: [] };
 }
 
 // Get review date from front matter
@@ -125,14 +127,18 @@ function selectNextFile(files, lastIndex) {
 // Update review date in front matter
 function updateReviewDate(content, newDate) {
   const dateString = formatDate(newDate);
-  const { frontMatter, body, hasFrontMatter } = parseFrontMatter(content);
+  const { frontMatter, body, hasFrontMatter, fieldOrder } = parseFrontMatter(content);
   
   // Update the reviewed_at field
   frontMatter.reviewed_at = dateString;
   
-  // Rebuild front matter string
-  const frontMatterLines = Object.entries(frontMatter)
-    .map(([key, value]) => `${key}: ${value}`);
+  // Rebuild front matter string, preserving original order
+  // Add reviewed_at at the end if it's new
+  const orderedKeys = fieldOrder.includes('reviewed_at') 
+    ? fieldOrder 
+    : [...fieldOrder, 'reviewed_at'];
+  
+  const frontMatterLines = orderedKeys.map(key => `${key}: ${frontMatter[key]}`);
   
   return `---\n${frontMatterLines.join('\n')}\n---\n\n${body}`;
 }

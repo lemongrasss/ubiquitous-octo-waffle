@@ -18,5 +18,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run tests
+      - name: Run review-docs tests
         run: node .github/scripts/__tests__/review-docs.test.js
+
+      - name: Run check-review-date tests
+        run: node .github/scripts/__tests__/check-review-date.test.js

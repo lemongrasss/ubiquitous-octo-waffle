@@ -1,5 +1,5 @@
 ---
-reviewed_at: 2025-10-15
+reviewed_at: 2026-01-29
 ---
 
 # Contributing Guide

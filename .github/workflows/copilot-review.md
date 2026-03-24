@@ -6,7 +6,7 @@ on:
 timeout-minutes: 30
 
 permissions:
-  contents: read
+  contents: write
   issues: read
   pull-requests: write
 

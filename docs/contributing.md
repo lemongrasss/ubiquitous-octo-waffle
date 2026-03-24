@@ -1,7 +1,3 @@
----
-reviewed_at: 2026-01-29
----
-
 # Contributing Guide
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi.

@@ -28,7 +28,7 @@ jobs:
         run: |
           set -e
 
-          THRESHOLD_DAYS="${REVIEW_THRESHOLD_DAYS:-1}"
+          THRESHOLD_DAYS="${REVIEW_THRESHOLD_DAYS:-30}"
           THRESHOLD_DATE=$(date -d "-${THRESHOLD_DAYS} days" +%Y-%m-%dT%H:%M:%S 2>/dev/null \
             || date -v-${THRESHOLD_DAYS}d +%Y-%m-%dT%H:%M:%S)
 

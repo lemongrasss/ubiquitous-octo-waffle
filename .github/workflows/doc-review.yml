@@ -42,9 +42,12 @@ jobs:
           echo "Threshold date: ${THRESHOLD_DATE}"
 
           # Get team members from GitHub team API
-          TEAM_MEMBERS=$(gh api \
+          TEAM_MEMBERS=""
+          if API_OUTPUT=$(gh api \
             "orgs/${TEAM_ORG}/teams/${TEAM_SLUG}/members" \
-            --jq 'if type == "array" then .[].login else empty end' 2>/dev/null || echo "")
+            --jq 'if type == "array" then .[].login else empty end' 2>/dev/null); then
+            TEAM_MEMBERS="$API_OUTPUT"
+          fi
 
           if [ -z "$TEAM_MEMBERS" ]; then
             echo "::warning::Could not fetch team members from ${TEAM_ORG}/${TEAM_SLUG}. Proceeding without assignee."

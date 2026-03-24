@@ -10,7 +10,7 @@ This repository uses an agentic workflow to keep documentation up to date. Inste
 2. **Uses git history** — The last commit timestamp for each file in `docs/` determines when it was last reviewed. No front matter or metadata is required in the documents themselves.
 3. **Pulls reviewers from a GitHub Team** — Team members are fetched dynamically from the [lemongrasss/matts-test-team](https://github.com/orgs/lemongrasss/teams/matts-test-team) GitHub team, eliminating the need for a static configuration file.
 4. **Creates review issues** — When a document hasn't been updated in over 30 days, the workflow creates a GitHub Issue with context about which docs are stale and what recent issues have been opened/closed in the repository.
-5. **Enables agentic review** — The created issues are designed to be picked up by Copilot coding agent (or a human reviewer), which can review the documentation content and propose improvements via a pull request.
+5. **Automatically triggers Copilot** — A second workflow listens for the `doc-review` label being applied to an issue. When triggered, it starts a Copilot coding agent session that reviews the documentation and opens a pull request with proposed improvements — no human action needed to kick off the review.
 
 ## Repository Structure
 
@@ -18,7 +18,8 @@ This repository uses an agentic workflow to keep documentation up to date. Inste
 docs/                          # Documentation files (markdown)
 .github/
   workflows/
-    doc-review.yml             # Agentic document review workflow
+    doc-review.yml             # Identifies stale docs and creates review issues
+    copilot-review.yml         # Triggers Copilot coding agent on doc-review issues
 ```
 
 ## Configuration

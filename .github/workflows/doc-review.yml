@@ -4,7 +4,13 @@ on:
   schedule:
     # Run daily at 9am UTC
     - cron: '0 9 * * *'
-  workflow_dispatch: # Allow manual triggering
+  workflow_dispatch:
+    inputs:
+      skip_threshold:
+        description: 'Skip the staleness threshold (treat all docs as stale)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -62,6 +68,13 @@ jobs:
           STALE_DOCS=""
           for doc in docs/*.md; do
             [ -f "$doc" ] || continue
+
+            # If skip_threshold is true, mark all docs as needing review
+            if [ "${{ github.event.inputs.skip_threshold || 'false' }}" = "true" ]; then
+              echo "SKIP THRESHOLD: marking ${doc} as stale (testing mode)"
+              STALE_DOCS="${STALE_DOCS}${doc} (threshold skipped)\n"
+              continue
+            fi
 
             # Get the last commit date for this file
             LAST_COMMIT_DATE=$(git log -1 --format="%aI" -- "$doc" 2>/dev/null || echo "")

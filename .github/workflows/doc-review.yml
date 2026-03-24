@@ -44,7 +44,7 @@ jobs:
           # Get team members from GitHub team API
           TEAM_MEMBERS=$(gh api \
             "orgs/${TEAM_ORG}/teams/${TEAM_SLUG}/members" \
-            --jq '.[].login' 2>/dev/null || echo "")
+            --jq 'if type == "array" then .[].login else empty end' 2>/dev/null || echo "")
 
           if [ -z "$TEAM_MEMBERS" ]; then
             echo "::warning::Could not fetch team members from ${TEAM_ORG}/${TEAM_SLUG}. Proceeding without assignee."

@@ -1,55 +1,41 @@
-# Automated Document Review Workflow
+# Agentic Document Review Workflow
 
-This directory contains the automated document review system for the repository.
+This directory contains the automated, agentic document review system for the repository.
 
 ## How It Works
 
-The workflow runs every hour and:
+The workflow runs daily at 9am UTC and:
 
-1. **Selects a document** from the `docs/` folder using round-robin rotation
-2. **Checks the review date** by reading the `reviewed_at` field from YAML front matter at the top of the file
-3. **Determines if review is needed** when:
-   - No front matter or review date is found in the file
-   - The review date is older than 30 days
-4. **Creates a Pull Request** if review is needed:
-   - Updates the `reviewed_at` field in the front matter with today's date
-   - Creates a PR to the `main` branch
-   - Randomly assigns a member from the team defined in `scripts/rotation_members.yml`
-   - Includes a message explaining the review requirement
+1. **Checks each document** in `docs/` by looking at the last git commit timestamp for the file
+2. **Determines if review is needed** when the file hasn't been modified in over 30 days
+3. **Fetches team members** from the GitHub team [lemongrasss/matts-test-team](https://github.com/orgs/lemongrasss/teams/matts-test-team) via the GitHub API
+4. **Gathers context** by collecting recently opened and closed issues in the repository
+5. **Creates a GitHub Issue** if any documents are stale:
+   - Lists which documents need review and when they were last modified
+   - Includes recent issues for context so reviewers can identify documentation gaps
+   - Assigns a random team member for oversight
+   - Labels the issue with `doc-review`
+6. **Avoids duplicates** — If an open `doc-review` issue already exists, no new issue is created
 
 ## Files
 
-- `workflows/doc-review.yml` - Main GitHub Actions workflow
-- `scripts/review-docs.js` - Node.js script that handles the review logic
-- `scripts/rotation_members.yml` - YAML file containing the list of team members for assignment
-- `state/doc-review-state.json` - Tracks which document was last checked (for round-robin)
+- `workflows/doc-review.yml` — GitHub Actions workflow that identifies stale docs and creates review issues
+
+## Key Differences from the Previous Workflow
+
+| Previous | Current |
+|---|---|
+| Used `reviewed_at` YAML front matter in each doc | Uses git commit timestamps — no metadata in docs |
+| Read team members from a static `rotation_members.yml` file | Fetches team members dynamically from a GitHub Team |
+| Ran custom Node.js scripts to check and update review dates | Single workflow step using shell commands and `gh` CLI |
+| Created PRs directly with only a date bump | Creates issues for agentic/human review with context |
+| Required a separate PR check workflow for front matter validation | No PR check needed — review status is derived from git history |
+| Maintained round-robin state in a JSON file | Stateless — checks all docs each run |
 
 ## Manual Triggering
 
 You can manually trigger the workflow from the Actions tab in GitHub using the "Run workflow" button.
 
-## Team Configuration
-
-The workflow assigns PRs to random members defined in `scripts/rotation_members.yml`. To add or remove members, edit this file:
-
-```yaml
-members:
- - username1
- - username2
-```
-
 ## Document Format
 
-Documents should include a YAML front matter block at the top with a `reviewed_at` field:
-
-```markdown
----
-reviewed_at: 2025-10-15
----
-
-# Document Title
-
-Content here...
-```
-
-If no front matter exists, the workflow will add one when creating the PR.
+Documents are plain markdown files in `docs/`. No front matter or special metadata is required — the review system uses git history to track when each file was last modified.

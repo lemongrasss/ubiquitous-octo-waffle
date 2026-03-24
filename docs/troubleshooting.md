@@ -1,7 +1,3 @@
----
-reviewed_at: 2025-10-21
----
-
 # Troubleshooting
 
 Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum tortor quam, feugiat vitae, ultricies eget, tempor sit amet, ante.

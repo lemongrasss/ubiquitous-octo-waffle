@@ -24,10 +24,12 @@ jobs:
           ISSUE_NUMBER="${{ github.event.issue.number }}"
           echo "Starting Copilot coding agent for issue #${ISSUE_NUMBER}..."
 
-          # Trigger Copilot coding agent to work on this issue
+          # Trigger Copilot coding agent to work on this issue.
+          # Requires Copilot coding agent to be enabled for this repository.
+          # See: https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent
           gh api \
             --method POST \
             "repos/${{ github.repository }}/copilot/coding_agent/sessions" \
-            -f "issue_number=${ISSUE_NUMBER}" \
+            -F "issue_number=${ISSUE_NUMBER}" \
             && echo "Copilot coding agent session started for issue #${ISSUE_NUMBER}" \
-            || echo "::warning::Could not start Copilot coding agent session. Ensure Copilot coding agent is enabled for this repository."
+            || echo "::warning::Could not start Copilot coding agent session. Ensure Copilot coding agent is enabled for this repository and the token has sufficient permissions."

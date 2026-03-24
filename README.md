@@ -35,3 +35,8 @@ The workflow can be configured via environment variables in `.github/workflows/d
 ## Manual Triggering
 
 You can manually trigger the review workflow from the **Actions** tab using the "Run workflow" button.
+
+## Prerequisites
+
+- **Copilot coding agent** must be [enabled for this repository](https://docs.github.com/en/copilot/using-github-copilot/using-copilot-coding-agent) for automatic reviews to work.
+- The GitHub team (`lemongrasss/matts-test-team`) must be accessible to the workflow's token for reviewer assignment.
